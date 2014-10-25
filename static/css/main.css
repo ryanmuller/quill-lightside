@@ -1,0 +1,83 @@
+body {
+  margin: 0;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333;
+  background-color: #409cc8;
+}
+
+header {
+  background-color: #32353d;
+  margin-bottom: 20px;
+}
+
+.brand {
+  color: white;
+}
+
+.prompt {
+  margin-bottom: 20px;
+  font-family: 'Courier New', Monaco, monospace;
+  font-weight: bold;
+  text-align: center;
+  font-size: 35px;
+  line-height: 45px;
+}
+
+.prompt-instructions {
+  padding: 10px;
+  font-size: 16px;
+  margin-bottom: 15px;
+  background-color: lightyellow;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.answer-box {
+  background-color: white;
+  padding: 30px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 2px 25px 0 25px;
+  margin-bottom: 0;
+  font-size: 16px;
+  line-height: 42px;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #c7c7c8;
+  font-weight: bold;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  color: white;
+  border: 3px solid white;
+  border-width: 0 0 3px 0;
+}
+
+.btn-primary, .btn-primary:hover {
+  background-color: #78ca47;
+  border-bottom-color: #57a800;
+}
+
+.answer-box textarea {
+  display: block;
+  margin: 20px auto;
+  width: 80%;
+}
+
+.answer-box .btn {
+  margin: 0 auto;
+  display: block;
+  height: 55px;
+  line-height: 55px;
+  padding: 0 100px;
+  font-weight: bold;
+  font-size: 20px;
+}
