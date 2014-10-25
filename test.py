@@ -1,8 +1,13 @@
 import requests
 import urlparse
 
+token = ""
+
+with open('config/token', 'r') as f:
+    token = f.read()
+
 HEADERS = {
-        "Authorization": "Token a8e0fa69fce93f58e7da6fd3b645ee423d29af16",
+        "Authorization": "Token {token}".format(token=token),
         "Content-Type": "application/json",
         }
 
