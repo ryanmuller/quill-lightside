@@ -1,21 +1,16 @@
 import requests
 import urlparse
+import json
 
 token = ""
 
 with open('config/token', 'r') as f:
-    token = f.read()
-
-HEADERS = {
-        "Authorization": "Token {token}".format(token=token),
-        "Content-Type": "application/json",
-        }
+    token = f.read().strip()
 
 CORPUS_UPLOAD_PARAMS_ENDPOINT = "https://api.getlightbox.com/api/corpus-upload-parameters/"
-CORPORA_ENDPOINT = "https://api.getlightbox.com/api/corpora/"
-PROMPTS_ENDPOINT = "https://api.getlightbox.com/api/prompts/"
 TRAINING_ANSWERS_ENDPOINT = "https://api.getlightbox.com/api/training-answers/"
 ANSWERS_ENDPOINT = "https://api.getlightbox.com/api/answers/"
+ANSWER_SETS_ENDPOINT = "https://api.getlightbox.com/api/answer-sets/"
 
 prompts = [
         "Why did the United States declare independence?",
@@ -25,47 +20,77 @@ prompts = [
         "What is Gestalt psychology?"
         ]
 
-def show_url(endpoint, resource_id):
-    return urlparse.urljoin(endpoint, resource_id)
+class LightboxResource:
+    base_url = "https://api.getlightbox.com/api/"
+    endpoint = None
 
-def id_from_url(url):
-    return url.split("/")[-1]
-
-def s3_params():
-    r = requests.get(CORPUS_UPLOAD_PARAMS_ENDPOINT, headers=HEADERS)
-    return r.json()
-
-def send_corpus_file():
-    data = {
-            'AWSAccessKeyId': params['access_key_id'],
-            'key': params['key'],
-            'acl': 'public-read',
-            'Policy': params['policy'],
-            'Signature': params['signature'],
-            'success_action_status': '201',
+    HEADERS = {
+            "Authorization": "Token {token}".format(token=token),
+            "Content-Type": "application/json",
             }
 
-    files = {'file': open('answers.csv', 'rb')}
-    r = requests.post(params['s3_endpoint'], data=data, files=files)
+    @staticmethod
+    def endpoint_of(resource):
+        return urlparse.urljoin(LightboxResource.base_url, resource+"/")
 
-def create_prompt(title="", text="", description=""):
-    data = { "title": title, "text": text, "description": description }
-    r = requests.post(PROMPTS_ENDPOINT, data=json.dumps(data), headers=HEADERS)
-    return id_from_url(r.json()['url'])
+    def set_id(self, _id):
+        self._id = _id
+        self.show_url = urlparse.urljoin(self.endpoint, _id)
 
-def create_corpus(prompt_id=0, description=""):
-    data = {
-            "prompt": show_url(PROMPTS_ENDPOINT, prompt_id),
-            "description": description
-            }
-    r = requests.post(CORPORA_ENDPOINT, data=json.dumps(data), headers=HEADERS)
-    return id_from_url(r.json()['url'])
+    def get(self):
+        r = requests.get(self.show_url, headers=LightboxResource.HEADERS)
+        self.response = r.json()
 
+    def __init__(self, data):
+        if 'id' in data:
+            self.set_id(data['id'])
+            self.get()
+        else:
+            print self.HEADERS
+            r = requests.post(self.endpoint, data=json.dumps(data), headers=self.HEADERS)
+            self.response = r.json()
 
-def initialize_lightbox(title="", prompt_text="", prompt_description=""):
-    prompt_id = create_prompt
-    print "Created prompt: {prompt_id}".format(prompt_id=prompt_id)
+            if 'url' in self.response:
+                self.set_id(self.response['url'].split('/')[-1])
 
+class Prompt(LightboxResource):
+    endpoint = LightboxResource.endpoint_of("prompts")
+
+    def __init__(self, title, text, description):
+        LightboxResource.__init__(self, { 'title': title, 'text': text, 'description': description })
+
+class Corpus(LightboxResource):
+    endpoint = LightboxResource.endpoint_of("corpora")
+    params_endpoint = LightboxResource.endpoint_of("corpus-upload-parameters")
+    s3_params = None
+
+    @staticmethod
+    def get_s3_params():
+        r = requests.get(Corpus.params_endpoint, headers=LightboxResource.HEADERS)
+        Corpus.s3_params = r.json()
+
+    @staticmethod
+    def send_file(filename):
+        get_s3_params()
+        data = {
+                'AWSAccessKeyId': Corpus.s3_params['access_key_id'],
+                'key': Corpus.s3_params['key'],
+                'acl': 'public-read',
+                'Policy': Corpus.s3_params['policy'],
+                'Signature': Corpus.s3_params['signature'],
+                'success_action_status': '201',
+                }
+        files = { 'file': open(filename, 'rb') }
+        r = requests.post(Corpus.s3_params['s3_endpoint'], data=data, files=files)
+
+class Answer(LightboxResource):
+    endpoint = LightboxResource.endpoint_of("answers")
 
 if __name__ == "__main__":
-    print s3_params()
+    # get s3 params
+    #Corpus.get_s3_params()
+    #print Corpus.s3_params
+
+    # create a new prompt
+    p = Prompt("test", "This is a test. Don't answer me!", "only a test")
+    print p._id
