@@ -1,16 +1,11 @@
 import requests
 import urlparse
 import json
+import random
 
 token = ""
-
 with open('config/token', 'r') as f:
     token = f.read().strip()
-
-CORPUS_UPLOAD_PARAMS_ENDPOINT = "https://api.getlightbox.com/api/corpus-upload-parameters/"
-TRAINING_ANSWERS_ENDPOINT = "https://api.getlightbox.com/api/training-answers/"
-ANSWERS_ENDPOINT = "https://api.getlightbox.com/api/answers/"
-ANSWER_SETS_ENDPOINT = "https://api.getlightbox.com/api/answer-sets/"
 
 prompts = [
         "Why did the United States declare independence?",
@@ -20,7 +15,7 @@ prompts = [
         "What is Gestalt psychology?"
         ]
 
-class LightboxResource:
+class LightboxResource(object):
     base_url = "https://api.getlightbox.com/api/"
     endpoint = None
 
@@ -30,61 +25,131 @@ class LightboxResource:
             }
 
     @staticmethod
-    def endpoint_of(resource):
+    def endpoint_for(resource):
         return urlparse.urljoin(LightboxResource.base_url, resource+"/")
 
-    def set_id(self, _id):
+    @staticmethod
+    def id_from_url(url):
+        return url.split('/')[-1]
+
+    @classmethod
+    def url_for(cls, _id):
+        url = urlparse.urljoin(cls.endpoint, str(_id))
+
+    @classmethod
+    def find(cls, _id):
+        r = requests.get(cls.url_for(_id), headers=cls.HEADERS)
+        obj = cls(_id, response.json())
+        return obj
+
+    @classmethod
+    def create(cls, data):
+        r = requests.post(cls.endpoint, data=json.dumps(data), headers=cls.HEADERS)
+        response = r.json()
+        obj = cls(cls.id_from_url(response['url']), response)
+        return obj
+
+    def __init__(self, _id, response={}):
         self._id = _id
-        self.show_url = urlparse.urljoin(self.endpoint, _id)
-
-    def get(self):
-        r = requests.get(self.show_url, headers=LightboxResource.HEADERS)
-        self.response = r.json()
-
-    def __init__(self, data):
-        if 'id' in data:
-            self.set_id(data['id'])
-            self.get()
-        else:
-            print self.HEADERS
-            r = requests.post(self.endpoint, data=json.dumps(data), headers=self.HEADERS)
-            self.response = r.json()
-
-            if 'url' in self.response:
-                self.set_id(self.response['url'].split('/')[-1])
+        self.response = response
 
 class Prompt(LightboxResource):
-    endpoint = LightboxResource.endpoint_of("prompts")
+    endpoint = LightboxResource.endpoint_for("prompts")
 
-    def __init__(self, title, text, description):
-        LightboxResource.__init__(self, { 'title': title, 'text': text, 'description': description })
+    @classmethod
+    def create(cls, title="", text="", description=""):
+        super(Prompt, cls).create({
+            'title': title,
+            'text': text,
+            'description': description
+            })
+
+class Grader(LightboxResource):
+    endpoint = LightboxResource.endpoint_for("graders")
+
+    @classmethod
+    def create(cls, prompt_id, name="Grader"):
+        super(Grader, cls).create({
+            'prompt': Prompt.url_for(prompt_id),
+            'name': name
+            })
+
+class Lightbox(LightboxResource):
+    endpoint = LightboxResource.endpoint_for("lightboxes")
+
+    @classmethod
+    def create(cls, grader_id, name="Lightbox"):
+        super(Lightbox, cls).create({
+            'grader': Grader.url_for(grader_id),
+            'name': name
+            })
 
 class Corpus(LightboxResource):
-    endpoint = LightboxResource.endpoint_of("corpora")
-    params_endpoint = LightboxResource.endpoint_of("corpus-upload-parameters")
-    s3_params = None
+    endpoint = LightboxResource.endpoint_for("corpora")
+    params_endpoint = LightboxResource.endpoint_for("corpus-upload-parameters")
+    s3_params = {}
 
-    @staticmethod
-    def get_s3_params():
-        r = requests.get(Corpus.params_endpoint, headers=LightboxResource.HEADERS)
-        Corpus.s3_params = r.json()
+    @classmethod
+    def create(cls, prompt_id=None, description=""):
+        if not prompt_id:
+            return None
 
-    @staticmethod
-    def send_file(filename):
-        get_s3_params()
+        super(Corpus, cls).create({
+            'prompt': Prompt.url_for(prompt_id),
+            'description': description
+            })
+
+    @classmethod
+    def get_s3_params(cls):
+        r = requests.get(cls.params_endpoint, headers=cls.HEADERS)
+        cls.s3_params = r.json()
+
+    @classmethod
+    def send_file(cls, filename):
+        cls.get_s3_params()
         data = {
-                'AWSAccessKeyId': Corpus.s3_params['access_key_id'],
-                'key': Corpus.s3_params['key'],
+                'AWSAccessKeyId': cls.s3_params['access_key_id'],
+                'key': cls.s3_params['key'],
                 'acl': 'public-read',
-                'Policy': Corpus.s3_params['policy'],
-                'Signature': Corpus.s3_params['signature'],
+                'Policy': cls.s3_params['policy'],
+                'Signature': cls.s3_params['signature'],
                 'success_action_status': '201',
                 }
         files = { 'file': open(filename, 'rb') }
-        r = requests.post(Corpus.s3_params['s3_endpoint'], data=data, files=files)
+        r = requests.post(cls.s3_params['s3_endpoint'], data=data, files=files)
+
+class Author(LightboxResource):
+    endpoint = LightboxResource.endpoint_for("authors")
+
+    @classmethod
+    def create(cls, designator=("%016x" % random.getrandbits(64)), email=""):
+        super(Author, cls).create({
+            'designator': designator,
+            'email': email
+            })
+
+class AnswerSet(LightboxResource):
+    endpoint = LightboxResource.endpoint_for("answer-sets")
+
+    @classmethod
+    def create(cls, lightbox_id):
+        super(AnswerSet, cls).create({
+            'lightbox': Lightbox.url_for(lightbox_id)
+            })
 
 class Answer(LightboxResource):
-    endpoint = LightboxResource.endpoint_of("answers")
+    endpoint = LightboxResource.endpoint_for("answers")
+
+    @classmethod
+    def create(cls, author_id, answer_set_id, text):
+        if not author_id or not answer_set_id or not text:
+            return None
+
+        super(Answer, cls).create({
+            'author': Author.url_for(prompt_id),
+            'answer_set': AnswerSet.url_for(answer_set_id),
+            'text': text
+            })
 
 if __name__ == "__main__":
     # get s3 params
@@ -92,5 +157,10 @@ if __name__ == "__main__":
     #print Corpus.s3_params
 
     # create a new prompt
-    p = Prompt("test", "This is a test. Don't answer me!", "only a test")
-    print p._id
+    #p = Prompt("test", "This is a test. Don't answer me!", "only a test")
+    #print p._id
+
+    # 35, 36 -> test prompts
+    #Prompt.find(35)
+    #p = Prompt.create("test2", "Your answer means nothing, NOTHING!", "yet another test")
+    pass
