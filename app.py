@@ -31,10 +31,10 @@ def answer(lightbox_id):
 @get('/answers/<answer_id>/result')
 def result(answer_id):
     answer = Answer.find(answer_id)
-    result = answer.prediction_result()
+    label = answer.label()
 
-    if result:
-        return { 'label': result.label() }
+    if label:
+        return { 'label': label }
     else:
         return {}
 

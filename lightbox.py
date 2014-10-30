@@ -2,6 +2,7 @@ import requests
 import urlparse
 import json
 import random
+import operator
 
 token = ""
 with open('config/token', 'r') as f:
@@ -276,6 +277,14 @@ class Answer(LightboxResource):
         else:
             return None
 
+    def label(self):
+        pr = self.prediction_result()
+
+        if pr:
+            return pr.label()
+        else:
+            return None
+
 class PredictionTask(LightboxResource):
     endpoint = LightboxResource.endpoint_for("prediction-tasks")
 
@@ -290,8 +299,10 @@ class PredictionTask(LightboxResource):
 class PredictionResult(LightboxResource):
     endpoint = LightboxResource.endpoint_for("prediction-results")
 
+    # TODO cleanup training data and figure out value=0 issue
     def label(self):
-        return self.response['label']
+        distribution = {k:v for (k,v) in self.response['distribution'].iteritems() if k != 'D' and k != '4'}
+        return max(distribution.iteritems(), key=operator.itemgetter(1))[0]
 
 if __name__ == "__main__":
     # get s3 params

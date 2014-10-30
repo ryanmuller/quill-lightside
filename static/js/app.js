@@ -1,3 +1,6 @@
+var checkInterv;
+var answerId;
+
 $(document).on("click", ".list.btn", function() {
   $("#list").show();
   $("#write").hide();
@@ -8,7 +11,16 @@ $(document).on("click", ".check.btn", function() {
   $.post("/lightboxes/"+lightbox_id+"/answers",
          { "text": $(".text").val() },
          function(data) {
-           console.log(data);
+           clearInterval(checkInterv);
+           answerId = data.answer_id;
+           checkInterv = window.setInterval(function() {
+             $.get("/answers/"+answerId+"/result", function(data) {
+               console.log(data);
+               if(data.hasOwnProperty("label")) {
+                 clearInterval(checkInterv);
+               }
+             });
+           }, 500);
          });
 });
 
