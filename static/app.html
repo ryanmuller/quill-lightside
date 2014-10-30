@@ -2,6 +2,8 @@
 <head>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="/assets/js/app.js"></script>
 </head>
 
 <body>
@@ -15,7 +17,16 @@
     </div>
   </header>
   <div class="container">
-    <article>
+    <article id="list">
+      <div class="prompt-list">
+        <button class="btn prompt" data-lightbox-id="33">Water cycle</button>
+        <button class="btn prompt" data-lightbox-id="33">Water cycle</button>
+        <button class="btn prompt" data-lightbox-id="33">Water cycle</button>
+        <button class="btn prompt" data-lightbox-id="33">Water cycle</button>
+      </div>
+    </article>
+    <article id="write">
+      <button class="btn list">Back to list</button>
       <div class="answer-box">
         <div class="prompt-instructions">
           <p>Please write your response in five to seven sentences.</p>
@@ -23,9 +34,9 @@
         <div class="prompt">
           <h1>How was the moon formed?</h1>
         </div>
-        <textarea rows="15"></textarea>
-        <button class="button show-results btn btn-primary">Check My Writing</button>
+        <textarea class="text" rows="15"></textarea>
+        <button class="button check btn btn-primary">Check My Writing</button>
       </div>
     </article>
   </div>
-  </section>
+</body>

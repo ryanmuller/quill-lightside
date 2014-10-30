@@ -14,15 +14,43 @@ header {
 
 .brand {
   color: white;
+  font-size: 36px;
+  line-height: 45px;
 }
 
-.prompt {
+#list .prompt-list {
+  padding: 10px;
+  font-size: 16px;
+  margin: 0 auto;
+  background-color: lightyellow;
+  border-radius: 5px;
+  width: 600px;
+}
+
+#list .btn.prompt {
+  display: block;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+#list .btn.prompt:last-child {
+  margin-bottom: 0;
+}
+
+#write .list {
+  margin-bottom: 10px;
+}
+
+#write .prompt {
   margin-bottom: 20px;
   font-family: 'Courier New', Monaco, monospace;
   font-weight: bold;
   text-align: center;
-  font-size: 35px;
-  line-height: 45px;
+  font-size: 30px;
+  line-height: 35px;
+  width: 90%;
+  max-width: 60em;
+  margin: 0 auto;
 }
 
 .prompt-instructions {
@@ -69,7 +97,8 @@ header {
 .answer-box textarea {
   display: block;
   margin: 20px auto;
-  width: 80%;
+  width: 90%;
+  max-width: 60em;
 }
 
 .answer-box .btn {
