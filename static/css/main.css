@@ -12,6 +12,10 @@ header {
   margin-bottom: 20px;
 }
 
+header .navbar {
+  text-align: center;
+}
+
 .brand {
   color: white;
   font-size: 36px;
@@ -109,4 +113,15 @@ header {
   padding: 0 100px;
   font-weight: bold;
   font-size: 20px;
+}
+
+.result {
+  height: 50px;
+  padding: 10px;
+  text-align: center;
+}
+
+.result span {
+  font-size: 30px;
+  line-height: 30px;
 }
